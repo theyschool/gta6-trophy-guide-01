@@ -9,10 +9,11 @@ An offline guide and tracker for all 55 Grand Theft Auto VI trophies on PlayStat
 ## What it does
 
 - **Tracker**: tick trophies off as you earn them; progress is saved in the browser (localStorage) and can be exported to a file and imported back. Progress bar with grade breakdown.
-- **Guide for every trophy**: each of the 55 trophies shows its official name, description and grade as PlayStation publishes them, plus a guide written in our own words — what to do, where and how, and when it can be missed — with the source named beside it. Sources: [PowerPyx — GTA 6 Trophy Guide & Roadmap](https://www.powerpyx.com/gta-6-grand-theft-auto-vi-trophy-guide-roadmap/) and [GTA Zone — GTA 6 Trophy List](https://gta-zone.com/news/gta-6-trophies-achievements/), cross-checked against the official list via [PlanetGTA6](https://www.planetgta6.com/en/gta-6-trophies/) (Exophase, cross-checked with PSNProfiles). Nothing is copied from another guide, and the three trophies no guide had cracked by 19 Nov 2026 (In The Beginning…, Bad Luck, I Guess, Ten Pin) are marked **unconfirmed** instead of guessed at.
-- **Roadmap to the platinum**: four stages — Story (60–80 h), 100% Completion (~100 h), Strangers & cleanup (~10 h), then the platinum — built from the official descriptions, with the 100% checklist's lenient thresholds spelled out (200/277 vehicles, 100/255 animals, 300 stunts, 70/80 challenges).
+- **Guide for every trophy**: each of the 55 trophies shows its official name, description and grade as PlayStation publishes them, plus a guide written in our own words — what to do, where and how, and when it can be missed — with the source named beside it. Sources: [PowerPyx — GTA 6 Trophy Guide & Roadmap](https://www.powerpyx.com/gta-6-grand-theft-auto-vi-trophy-guide-roadmap/) and [GTA Zone — GTA 6 Trophy List](https://gta-zone.com/news/gta-6-trophies-achievements/), cross-checked against the official list via [PlanetGTA6](https://www.planetgta6.com/en/gta-6-trophies/) (Exophase, cross-checked with PSNProfiles). Nothing is copied from another guide, and the four trophies no guide had cracked by 19 Nov 2026 (In The Beginning…, Bad Luck, I Guess, Ten Pin, Fair Game) are marked **Unconfirmed** instead of guessed at.
+- **Next up**: a planner bar under the header names the single best trophy to chase next — the possibly missable one first, then the earliest roadmap stage — with the reason beside it and a link that jumps straight to its row.
+- **Roadmap to the platinum**: four stages — Story (60–80 h), 100% Completion (~100 h), Strangers & cleanup (~10 h), then the platinum — built from the official descriptions, with the 100% checklist's lenient thresholds spelled out (200/277 vehicles, 100/255 animals, 300 stunts, 70/80 challenges). Each stage card shows its live progress (3/13 earned, and so on).
 - **Missable flag**: the one possibly missable trophy, Positive Mental Attitude, is flagged everywhere, with the Chapter 1 balcony meditation spelled out in its guide and in a warning box above the list.
-- **Filters**: by kind (story, missable, collectibles, activities, online — online is empty on purpose, with a note that all 55 are single-player), by grade, by earned/remaining, plus search.
+- **Filters and sort**: by kind (story, missable, collectibles, activities, online — online is empty on purpose, with a note that all 55 are single-player), by grade, by earned/remaining, plus search — and sort by roadmap order, name, grade or stage. The sort choice is saved with the rest of the settings.
 - **Spoiler setting**: hides story trophies' names, descriptions and guides until you tick them earned.
 - **Offline**: static files under `app/`, no build step, no network request at runtime. Serve `app/` with any static server and open `index.html`.
 
@@ -23,7 +24,7 @@ node serve.ts        # serves app/ on http://localhost:8080
 node shoot.mjs       # takes the 4 screenshots and exercises the tracker (headless Chromium)
 ```
 
-Screenshots (all real renders, 1280×800 JPEG): `1-cover.jpg` (checklist with the platinum guide open, progress, roadmap, filters), `2-missable.jpg` (the missable trophy's full guide with sources), `3-spoilers.jpg` (spoiler setting hiding story trophies), `4-collectibles.jpg` (collectibles filter).
+Screenshots (all real renders, 1280×800 JPEG): `1-cover.jpg` (Next-up planner, roadmap with stage progress, missable warning, filters, checklist with the platinum guide open), `2-missable.jpg` (the missable trophy's full guide with sources), `3-spoilers.jpg` (spoiler setting hiding story trophies), `4-unconfirmed.jpg` (search for Ten Pin, showing its Unconfirmed tag and honest guide).
 
 ## Hand in
 
@@ -31,4 +32,4 @@ Screenshots (all real renders, 1280×800 JPEG): `1-cover.jpg` (checklist with th
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 
-`main.ts` copies `app/` and `screenshots/` to the output directory, writes `dossier.json` with the vendored make.fun library, then verifies the hand-in (3–4 screenshots under 256 KiB, dossier under 1.5 MiB, 55/55 trophies with guides) and prints a summary.
+`main.ts` copies `app/` and `screenshots/` to the output directory, writes `dossier.json` with the vendored make.fun library, then verifies the hand-in (3–4 screenshots under 256 KiB with the right dimensions, dossier under 1.5 MiB, 55/55 trophies with guides and named sources, unique ids and names, exactly 1 missable and 4 unconfirmed trophies, stage counts 13/28/13/1) and prints a summary.

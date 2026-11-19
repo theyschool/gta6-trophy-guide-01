@@ -1,6 +1,7 @@
 // Dev tooling (not part of the entry): take the 4 screenshots in shots.json with
 // headless Chromium, and exercise the tracker (check, persist, export, import,
-// filters, spoiler toggle). Serves app/ via serve.ts on localhost:8080.
+// filters, spoiler toggle, sort, Next-up planner, stage progress, unconfirmed tag).
+// Serves app/ via serve.ts on localhost:8080.
 // Usage: node shoot.mjs   (run from this repo's root)
 import { chromium } from 'playwright-core';
 import { execSync, spawn } from 'node:child_process';
@@ -46,7 +47,9 @@ try {
     await page.goto(BASE + '/', { waitUntil: 'load' });
     await page.waitForFunction(() => window.__guideReady === true, null, { timeout: 15000 });
     if (shot.kind) await page.click(`#kindChips [data-kind="${shot.kind}"]`);
+    if (shot.search) await page.fill('#search', shot.search);
     if (shot.scroll) await page.evaluate((y) => window.scrollTo(0, y), shot.scroll);
+    if (shot.scrollToRow) await page.evaluate(() => { document.querySelector('.trophy')?.scrollIntoView({ block: 'center' }); });
     await page.waitForTimeout(300);
     const path = join(ROOT, 'screenshots', shot.file);
     await page.screenshot({ path, type: 'jpeg', quality: 86 });
@@ -67,12 +70,23 @@ try {
 
   await check('55 rows render', (await page.locator('.trophy').count()) === 55);
   await check('progress starts 0 / 55', (await page.locator('#progressCount').innerText()) === '0 / 55');
+  // Next-up planner: with nothing earned, the missable trophy comes first.
+  await check('next-up names the missable trophy', (await page.locator('#nextUpName').innerText()) === 'Positive Mental Attitude');
+  await check('next-up reason mentions Chapter 1', (await page.locator('#nextUpWhy').innerText()).includes('Chapter 1'));
+  // Stage progress starts at zero everywhere.
+  await check('stage 1 shows 0/13', (await page.locator('#stageCount1').innerText()) === '0/13 earned');
+  await check('stage 2 shows 0/28', (await page.locator('#stageCount2').innerText()) === '0/28 earned');
   // Tick the first trophy (Vice Got a Price!) and confirm persistence across reload.
   await page.locator('.trophy input[type="checkbox"]').first().check();
   await check('progress becomes 1 / 55', (await page.locator('#progressCount').innerText()) === '1 / 55');
+  await check('stage 4 shows 1/1 after ticking the platinum', (await page.locator('#stageCount4').innerText()) === '1/1 earned');
+  await check('next-up still names the missable trophy after ticking the platinum', (await page.locator('#nextUpName').innerText()) === 'Positive Mental Attitude');
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => window.__guideReady === true, null, { timeout: 15000 });
   await check('tick persists after reload', (await page.locator('#progressCount').innerText()) === '1 / 55');
+  // Next-up link jumps to the missable trophy's row.
+  await page.click('#nextUpLink');
+  await check('next-up link reveals the missable row', (await page.locator('#trophyList [data-trophy-id="28"]').count()) === 1);
   // Export: capture the download and check its content.
   const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
   await page.click('#exportBtn');
@@ -92,6 +106,12 @@ try {
   await page.waitForTimeout(300);
   await check('import restores 3 earned', (await page.locator('#progressCount').innerText()) === '3 / 55');
   unlinkSync(importPath);
+  // Sort: by name the first row is A Classic Blitz Play; by grade the platinum leads.
+  await page.selectOption('#sortOrder', 'name');
+  await check('sort by name puts A Classic Blitz Play first', (await page.locator('.trophy-name').first().innerText()) === 'A Classic Blitz Play');
+  await page.selectOption('#sortOrder', 'grade');
+  await check('sort by grade puts the platinum first', (await page.locator('.trophy-name').first().innerText()) === 'Vice Got a Price!');
+  await page.selectOption('#sortOrder', 'roadmap');
   // Filters.
   await page.click('#kindChips [data-kind="missable"]');
   await check('missable filter shows exactly 1 row', (await page.locator('.trophy').count()) === 1);
@@ -109,6 +129,10 @@ try {
   await page.click('#kindChips [data-kind="all"]');
   await page.fill('#search', 'balcony');
   await check('search finds the meditation trophy', (await page.locator('.trophy').count()) === 1);
+  // Unconfirmed tag: searching for Ten Pin shows exactly its row, tagged.
+  await page.fill('#search', 'Ten Pin');
+  await check('search finds Ten Pin', (await page.locator('.trophy').count()) === 1);
+  await check('Ten Pin carries the Unconfirmed tag', (await page.locator('.tag.unconfirmed').count()) === 1);
   await page.close();
 } finally {
   await browser.close();

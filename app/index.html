@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leonida Trophy Guide — GTA VI (55 trophies)</title>
-<meta name="description" content="Offline tracker and guide for all 55 GTA VI PlayStation 5 trophies: roadmap to the platinum, missable flags, and a cited guide for every trophy.">
+<meta name="description" content="Offline tracker and guide for all 55 GTA VI PlayStation 5 trophies: roadmap to the platinum, missable flags, a Next-up planner, and a cited guide for every trophy.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -23,28 +23,35 @@
   </div>
 </header>
 
+<section class="nextup" id="nextUp" aria-label="Next trophy to chase">
+  <span class="nextup-label">Next up</span>
+  <strong id="nextUpName">Positive Mental Attitude</strong>
+  <span id="nextUpWhy">The only possibly missable trophy — do the Chapter 1 balcony meditation before the chapter ends.</span>
+  <a href="#" id="nextUpLink">Open in list ↓</a>
+</section>
+
 <section class="roadmap" id="roadmap" aria-label="Roadmap to the platinum">
   <h2>Roadmap to the platinum — about 200 hours</h2>
   <div class="stages">
     <article class="stage">
       <h3><span class="stage-num">1</span> Story <span class="stage-time">60–80 h</span></h3>
       <p>Play the five chapters; take optional missions as they appear. Scan vehicles and study animals on the way — both count toward 100% later. Keep a save at each chapter's start and end: no mission replay.</p>
-      <p class="stage-trophies">12 story trophies &middot; 1 gold at the end</p>
+      <p class="stage-trophies">12 story trophies &middot; 1 gold at the end &middot; <span class="stage-progress" id="stageCount1">0/13 earned</span></p>
     </article>
     <article class="stage">
       <h3><span class="stage-num">2</span> 100% Completion <span class="stage-time">~100 h</span></h3>
       <p>After the credits: Progress &gt; Stats &gt; 100% Completion. Lenient — about 60% true completion: 200/277 vehicles, 100/255 animals, 300 stunts, 70/80 challenges, 100 optional missions, 8 bank vaults, 39 gang operations, 15 target decks, 15/18 meditations. Nothing missable.</p>
-      <p class="stage-trophies">A Long Road (gold) &middot; most silver &amp; bronze</p>
+      <p class="stage-trophies">A Long Road (gold) &middot; most silver &amp; bronze &middot; <span class="stage-progress" id="stageCount2">0/28 earned</span></p>
     </article>
     <article class="stage">
       <h3><span class="stage-num">3</span> Strangers &amp; cleanup <span class="stage-time">~10 h</span></h3>
       <p>Finish the 8 Strangers &amp; Freaks strands that count (Kirk, Kyle, Yago, Pilot Pete), the 6 character questlines, and the last secrets — the UFO, the blue Banshee, the bowling robbery.</p>
-      <p class="stage-trophies">Strangers &amp; Freaks (silver) &middot; 6 character finals</p>
+      <p class="stage-trophies">Strangers &amp; Freaks (silver) &middot; 6 character finals &middot; <span class="stage-progress" id="stageCount3">0/13 earned</span></p>
     </article>
     <article class="stage stage-platinum">
-      <h3><span class="stage-num">★</span> Platinum</h3>
+      <h3><span class="stage-num">★</span> Platinum <span class="stage-progress" id="stageCount4">0/1 earned</span></h3>
       <p><strong>Vice Got a Price!</strong> pops the moment the other 54 are done. No multiplayer, no DLC, no second playthrough.</p>
-      <p class="stage-trophies">1 platinum &middot; 0 Gamerscore on Xbox (Mythic)</p>
+      <p class="stage-trophies">1 platinum &middot; the only trophy with nothing of its own to do</p>
     </article>
   </div>
   <aside class="missable-warning" id="missableWarning">
@@ -71,6 +78,14 @@
         <option value="all">Earned &amp; remaining</option>
         <option value="earned">Earned only</option>
         <option value="remaining">Remaining only</option>
+      </select>
+    </label>
+    <label>Sort
+      <select id="sortOrder">
+        <option value="roadmap">Roadmap order</option>
+        <option value="name">Name A–Z</option>
+        <option value="grade">Grade</option>
+        <option value="stage">Roadmap stage</option>
       </select>
     </label>
     <label class="spoiler-label"><input id="spoilerToggle" type="checkbox" checked> Hide story spoilers</label>
@@ -109,7 +124,7 @@
     <li><a href="https://gta-zone.com/news/gta-6-trophies-achievements/" target="_blank" rel="noopener">GTA Zone — GTA 6 Trophy List</a> (cross-check of the list, counts and roadmap)</li>
     <li><a href="https://www.planetgta6.com/en/gta-6-trophies/" target="_blank" rel="noopener">PlanetGTA6 — GTA 6 Trophies</a> (official names and descriptions as shown on PlayStation Network, via Exophase, cross-checked with PSNProfiles)</li>
   </ul>
-  <p>Guide text is written for this page; nothing is copied from another guide. Official trophy names and descriptions are shown as PlayStation publishes them. Three trophies (In The Beginning…, Bad Luck, I Guess, Ten Pin) were still unconfirmed by every guide on 19 Nov 2026 and are marked as such rather than guessed at. This is an unofficial fan guide — no Rockstar Games logo, artwork or game screenshots are used. Works fully offline; no network request is made at runtime.</p>
+  <p>Guide text is written for this page; nothing is copied from another guide. Official trophy names and descriptions are shown as PlayStation publishes them. Four trophies (In The Beginning…, Bad Luck, I Guess, Ten Pin, Fair Game) were still unconfirmed by every guide on 19 Nov 2026 and are marked <strong>Unconfirmed</strong> in the list rather than guessed at. This is an unofficial fan guide — no Rockstar Games logo, artwork or game screenshots are used. Works fully offline; no network request is made at runtime.</p>
 </footer>
 <script type="module" src="app.js"></script>
 </body>
