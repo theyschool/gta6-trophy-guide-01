@@ -3,129 +3,101 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leonida Trophy Guide — GTA VI (55 trophies)</title>
-<meta name="description" content="Offline tracker and guide for all 55 GTA VI PlayStation 5 trophies: roadmap to the platinum, missable flags, a Next-up planner, and a cited guide for every trophy.">
+<title>Leonida Trophy Guide — all 55 GTA 6 trophies</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="masthead">
   <div class="masthead-text">
-    <p class="kicker">Grand Theft Auto VI &middot; PlayStation 5 &middot; offline guide &amp; tracker</p>
+    <p class="kicker">Grand Theft Auto VI &middot; PlayStation 5 &middot; 55 trophies</p>
     <h1>Leonida Trophy Guide</h1>
-    <p class="sub">All 55 trophies — 1 platinum, 2 gold, 6 silver, 46 bronze, 28 hidden — each with its official name and description, a cited guide in our own words, and a tracker. No online trophies. About 200 hours to the platinum.</p>
+    <p class="lede">Every trophy with its official name, description and grade, a guide in our own words that cites its sources, a roadmap to the platinum — and a tracker that saves your progress.</p>
   </div>
-  <div class="progress-card" aria-label="Progress">
-    <div class="progress-big"><span id="progressCount">0 / 55</span><span id="progressPct">0%</span></div>
-    <div class="progress-bar"><div id="progressFill"></div></div>
-    <p id="progressDetail">0 platinum &middot; 0 gold &middot; 0 silver &middot; 0 bronze earned</p>
-    <p class="progress-note">Progress is saved in this browser (localStorage). Export it to keep a backup.</p>
+  <div class="progress-card" id="progressCard" aria-live="polite">
+    <div class="big-count"><span id="earnedCount">0</span><span class="of">/ 55</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <p class="progress-note" id="progressNote">No trophies earned yet — tick them off as you go.</p>
+    <p class="makeup">1 platinum &middot; 2 gold &middot; 6 silver &middot; 46 bronze &middot; 28 hidden &middot; 0 online</p>
   </div>
 </header>
 
-<section class="nextup" id="nextUp" aria-label="Next trophy to chase">
-  <span class="nextup-label">Next up</span>
-  <strong id="nextUpName">Positive Mental Attitude</strong>
-  <span id="nextUpWhy">The only possibly missable trophy — do the Chapter 1 balcony meditation before the chapter ends.</span>
-  <a href="#" id="nextUpLink">Open in list ↓</a>
+<section class="nextup" id="nextUp" aria-label="Next up">
+  <div class="nextup-label">Next up</div>
+  <div class="nextup-body" id="nextUpBody">Loading the guide&hellip;</div>
 </section>
 
-<section class="roadmap" id="roadmap" aria-label="Roadmap to the platinum">
-  <h2>Roadmap to the platinum — about 200 hours</h2>
-  <div class="stages">
-    <article class="stage">
-      <h3><span class="stage-num">1</span> Story <span class="stage-time">60–80 h</span></h3>
-      <p>Play the five chapters; take optional missions as they appear. Scan vehicles and study animals on the way — both count toward 100% later. Keep a save at each chapter's start and end: no mission replay.</p>
-      <p class="stage-trophies">12 story trophies &middot; 1 gold at the end &middot; <span class="stage-progress" id="stageCount1">0/13 earned</span></p>
-    </article>
-    <article class="stage">
-      <h3><span class="stage-num">2</span> 100% Completion <span class="stage-time">~100 h</span></h3>
-      <p>After the credits: Progress &gt; Stats &gt; 100% Completion. Lenient — about 60% true completion: 200/277 vehicles, 100/255 animals, 300 stunts, 70/80 challenges, 100 optional missions, 8 bank vaults, 39 gang operations, 15 target decks, 15/18 meditations. Nothing missable.</p>
-      <p class="stage-trophies">A Long Road (gold) &middot; most silver &amp; bronze &middot; <span class="stage-progress" id="stageCount2">0/28 earned</span></p>
-    </article>
-    <article class="stage">
-      <h3><span class="stage-num">3</span> Strangers &amp; cleanup <span class="stage-time">~10 h</span></h3>
-      <p>Finish the 8 Strangers &amp; Freaks strands that count (Kirk, Kyle, Yago, Pilot Pete), the 6 character questlines, and the last secrets — the UFO, the blue Banshee, the bowling robbery.</p>
-      <p class="stage-trophies">Strangers &amp; Freaks (silver) &middot; 6 character finals &middot; <span class="stage-progress" id="stageCount3">0/13 earned</span></p>
-    </article>
-    <article class="stage stage-platinum">
-      <h3><span class="stage-num">★</span> Platinum <span class="stage-progress" id="stageCount4">0/1 earned</span></h3>
-      <p><strong>Vice Got a Price!</strong> pops the moment the other 54 are done. No multiplayer, no DLC, no second playthrough.</p>
-      <p class="stage-trophies">1 platinum &middot; the only trophy with nothing of its own to do</p>
-    </article>
+<section class="toolbar" aria-label="Find and filter trophies">
+  <input id="search" type="search" placeholder="Search a trophy, a mission, a place&hellip;" aria-label="Search trophies" autocomplete="off">
+  <div class="kind-filters" id="kindFilters" role="group" aria-label="Filter by kind">
+    <button data-kind="all" class="active" type="button">All 55</button>
+    <button data-kind="story" type="button">Story</button>
+    <button data-kind="missable" type="button">Missable</button>
+    <button data-kind="collectibles" type="button">Collectibles</button>
+    <button data-kind="activities" type="button">Activities</button>
+    <button data-kind="online" type="button">Online</button>
   </div>
-  <aside class="missable-warning" id="missableWarning">
-    <strong>⚠ The one possibly missable trophy — Positive Mental Attitude.</strong>
-    In Chapter 1, after the mission Down to Earth, talk to Lucia in the kitchen in the morning and follow her to the balcony to learn to meditate. That home meditation is gone after Chapter 1. Everything else can be earned after the story.
-    <span class="warn-source">Source: PowerPyx — GTA 6 Trophy Guide &amp; Roadmap</span>
+  <label class="field">Grade
+    <select id="gradeFilter">
+      <option value="all">Any grade</option>
+      <option value="platinum">Platinum</option>
+      <option value="gold">Gold</option>
+      <option value="silver">Silver</option>
+      <option value="bronze">Bronze</option>
+    </select>
+  </label>
+  <label class="field">Sort
+    <select id="sortOrder">
+      <option value="roadmap">Roadmap order</option>
+      <option value="name">Name A–Z</option>
+      <option value="grade">Grade (best first)</option>
+      <option value="stage">Stage</option>
+    </select>
+  </label>
+  <label class="spoiler-toggle"><input id="spoilerToggle" type="checkbox"> Spoilers on</label>
+  <div class="save-actions">
+    <button id="exportBtn" type="button">Export progress</button>
+    <button id="importBtn" type="button">Import progress</button>
+    <input id="importFile" type="file" accept=".json,application/json" hidden>
+  </div>
+</section>
+
+<section class="stages" id="stageStrip" aria-label="Progress by roadmap stage"></section>
+
+<main class="layout">
+  <section class="checklist" aria-label="Trophy checklist">
+    <h2 id="listHeading">Checklist <span id="shownCount"></span></h2>
+    <p class="hint" id="onlineNote">There are no online trophies: every one of the 55 is single-player, so the Online filter is empty by design.</p>
+    <ul id="trophyList" class="trophy-list"></ul>
+    <p class="empty" id="emptyNote" hidden>No trophies match those filters.</p>
+  </section>
+  <aside class="side" aria-label="Roadmap and notes">
+    <section class="roadmap" id="roadmap">
+      <h2>Road to the platinum</h2>
+      <p class="roadmap-intro">About 200 hours at difficulty 4 out of 10 (PowerPyx). One playthrough is enough, and there are no online trophies. The order below is built from the official descriptions.</p>
+      <ol class="roadmap-steps" id="roadmapSteps"></ol>
+    </section>
+    <section class="missable-box" id="missableBox">
+      <h2>Missable: just one</h2>
+      <p><strong>Positive Mental Attitude</strong> is the only trophy that may be missable. Meditate at all 18 spots — and do the first one, Lucia&rsquo;s balcony meditation at home in Chapter 1, before that chapter ends. It becomes permanently unavailable after Chapter 1, and there is no mission replay. Keep a manual save at the start of every chapter.</p>
+      <p class="source-line">Sources: PowerPyx, GTABase</p>
+    </section>
+    <section class="unconfirmed-box" id="unconfirmedBox">
+      <h2>Not yet confirmed</h2>
+      <p>Eight trophies are marked <span class="tag tag-unconfirmed">Unconfirmed</span> because no guide has pinned down their trigger yet. This guide says so plainly instead of guessing — check PowerPyx or GTABase for the latest before you chase them.</p>
+      <ul id="unconfirmedList" class="unconfirmed-list"></ul>
+    </section>
+    <section class="sources-box">
+      <h2>Where the facts come from</h2>
+      <p>Names, descriptions, grades and counts are the official list as Exophase and PSNProfiles publish it. Roadmap, difficulty and time come from PowerPyx. Each trophy&rsquo;s guide names its sources beside it.</p>
+    </section>
   </aside>
-</section>
-
-<section class="controls" aria-label="Tracker controls">
-  <div class="control-row">
-    <label class="search-label">Search <input id="search" type="search" placeholder="trophy, mission, place…" autocomplete="off"></label>
-    <label>Grade
-      <select id="gradeFilter">
-        <option value="all">All grades</option>
-        <option value="platinum">Platinum</option>
-        <option value="gold">Gold</option>
-        <option value="silver">Silver</option>
-        <option value="bronze">Bronze</option>
-      </select>
-    </label>
-    <label>Status
-      <select id="statusFilter">
-        <option value="all">Earned &amp; remaining</option>
-        <option value="earned">Earned only</option>
-        <option value="remaining">Remaining only</option>
-      </select>
-    </label>
-    <label>Sort
-      <select id="sortOrder">
-        <option value="roadmap">Roadmap order</option>
-        <option value="name">Name A–Z</option>
-        <option value="grade">Grade</option>
-        <option value="stage">Roadmap stage</option>
-      </select>
-    </label>
-    <label class="spoiler-label"><input id="spoilerToggle" type="checkbox" checked> Hide story spoilers</label>
-  </div>
-  <div class="control-row">
-    <div class="chips" id="kindChips" role="group" aria-label="Filter by kind">
-      <button type="button" data-kind="all" class="chip active">All 55</button>
-      <button type="button" data-kind="story" class="chip">Story</button>
-      <button type="button" data-kind="missable" class="chip">Missable</button>
-      <button type="button" data-kind="collectibles" class="chip">Collectibles</button>
-      <button type="button" data-kind="activities" class="chip">Activities</button>
-      <button type="button" data-kind="online" class="chip">Online</button>
-    </div>
-    <div class="file-actions">
-      <button id="exportBtn" type="button">Export progress</button>
-      <label class="import-label">Import progress <input id="importFile" type="file" accept="application/json,.json"></label>
-      <button id="resetBtn" type="button">Reset</button>
-    </div>
-  </div>
-  <p class="controls-note" id="controlsNote"></p>
-</section>
-
-<main>
-  <p id="resultCount" class="result-count" aria-live="polite"></p>
-  <div id="onlineNote" class="online-note" hidden>
-    <strong>No online trophies.</strong> All 55 GTA VI trophies are single-player and offline — there is nothing to earn in an online mode, and the platinum can never expire with a server. (PowerPyx; GTA Zone.)
-  </div>
-  <ul id="trophyList" class="trophy-list"></ul>
 </main>
 
-<footer>
-  <h2>Sources</h2>
-  <p>Every guide names its sources beside it. The two guides this tracker draws on, in its own words:</p>
-  <ul>
-    <li><a href="https://www.powerpyx.com/gta-6-grand-theft-auto-vi-trophy-guide-roadmap/" target="_blank" rel="noopener">PowerPyx — GTA 6 Trophy Guide &amp; Roadmap</a> (roadmap, counts, steps, the missable meditation)</li>
-    <li><a href="https://gta-zone.com/news/gta-6-trophies-achievements/" target="_blank" rel="noopener">GTA Zone — GTA 6 Trophy List</a> (cross-check of the list, counts and roadmap)</li>
-    <li><a href="https://www.planetgta6.com/en/gta-6-trophies/" target="_blank" rel="noopener">PlanetGTA6 — GTA 6 Trophies</a> (official names and descriptions as shown on PlayStation Network, via Exophase, cross-checked with PSNProfiles)</li>
-  </ul>
-  <p>Guide text is written for this page; nothing is copied from another guide. Official trophy names and descriptions are shown as PlayStation publishes them. Four trophies (In The Beginning…, Bad Luck, I Guess, Ten Pin, Fair Game) were still unconfirmed by every guide on 19 Nov 2026 and are marked <strong>Unconfirmed</strong> in the list rather than guessed at. This is an unofficial fan guide — no Rockstar Games logo, artwork or game screenshots are used. Works fully offline; no network request is made at runtime.</p>
+<footer class="colophon">
+  <p>Leonida Trophy Guide — an offline guide and tracker for the 55 PlayStation 5 trophies of Grand Theft Auto VI. No Rockstar logo or official artwork. Guides are written for this entry in our own words; sources are cited beside each one, never copied.</p>
 </footer>
+
 <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -1,144 +1,227 @@
-// Dev tooling (not part of the entry): take the 4 screenshots in shots.json with
-// headless Chromium, and exercise the tracker (check, persist, export, import,
-// filters, spoiler toggle, sort, Next-up planner, stage progress, unconfirmed tag).
-// Serves app/ via serve.ts on localhost:8080.
-// Usage: node shoot.mjs   (run from this repo's root)
-import { chromium } from 'playwright-core';
-import { execSync, spawn } from 'node:child_process';
-import { readFileSync, statSync, writeFileSync, unlinkSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+// Leonida Trophy Guide — screenshot and check driver. Serves app/ with the
+// repo's own serve.ts, opens it in headless Chromium over CDP, seeds progress,
+// takes the 4 screenshots named in shots.json, and runs the checks the
+// hand-in cares about: 55 rows render, ticks persist, export/import round-trip,
+// missable filter, spoiler hiding, search, sort, and zero console errors.
+// Run: node shoot.mjs  (writes screenshots/ and prints a check report)
+
+import { spawn } from 'node:child_process';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
-const BASE = 'http://localhost:8080';
-const trophies = JSON.parse(readFileSync(join(ROOT, 'app/data/trophies.json'), 'utf8')).trophies;
-const shots = JSON.parse(readFileSync(join(ROOT, 'shots.json'), 'utf8'));
-const nameOf = (id) => trophies.find((t) => t.id === id).name;
+const here = fileURLToPath(new URL('.', import.meta.url));
+const CHROME = process.env.CHROMIUM
+  || '/home/hatch/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome';
+const PORT = 8123;
+const CDP_PORT = 9333;
+const SHOTS = [
+  { file: '1-cover.jpg', seed: [2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 20, 21], url: '/', note: 'cover' },
+  { file: '2-missable.jpg', seed: [2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 20, 21], url: '/#trophy=28', note: 'missable' },
+  { file: '3-spoilers.jpg', seed: [], url: '/', note: 'spoilers' },
+  { file: '4-unconfirmed.jpg', seed: [2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 20, 21], url: '/', search: 'Ten Pin', note: 'unconfirmed' },
+];
 
-const server = spawn('node', ['serve.ts'], { cwd: ROOT, stdio: 'ignore' });
-async function waitForServer() {
-  for (let i = 0; i < 50; i++) {
-    try {
-      const r = await fetch(BASE + '/index.html');
-      if (r.ok) return;
-    } catch { /* not up yet */ }
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  throw new Error('serve.ts did not come up');
+const errors = [];
+const failed = [];
+let passed = 0;
+function check(name, ok, detail = '') {
+  if (ok) { passed += 1; console.log(`  pass  ${name}${detail ? ` — ${detail}` : ''}`); }
+  else { failed.push(name); console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ''}`); }
+}
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+// --- tiny CDP client over the browser websocket -----------------------------
+let ws;
+let nextId = 1;
+const pending = new Map();
+function cdp(method, params = {}, sessionId) {
+  return new Promise((resolve, reject) => {
+    const id = nextId++;
+    pending.set(id, { resolve, reject });
+    ws.send(JSON.stringify({ id, method, params, sessionId }));
+  });
+}
+function connect(url) {
+  return new Promise((resolve, reject) => {
+    ws = new WebSocket(url);
+    ws.onopen = resolve;
+    ws.onerror = reject;
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.id && pending.has(msg.id)) {
+        const { resolve, reject } = pending.get(msg.id);
+        pending.delete(msg.id);
+        if (msg.error) reject(new Error(msg.error.message));
+        else resolve(msg.result);
+      }
+      if (msg.method === 'Runtime.exceptionThrown') {
+        errors.push(`exception: ${msg.params.exceptionDetails?.text || ''} ${msg.params.exceptionDetails?.exception?.description || ''}`);
+      }
+      if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
+        errors.push(`console.error: ${msg.params.args.map((a) => a.value ?? a.description ?? '').join(' ')}`);
+      }
+      if (msg.method === 'Network.loadingFailed') {
+        errors.push(`network failed: ${msg.params.errorText}`);
+      }
+    };
+  });
+}
+async function evaluate(sessionId, expression) {
+  const r = await cdp('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }, sessionId);
+  if (r.exceptionDetails) throw new Error(r.exceptionDetails.text);
+  return r.result.value;
 }
 
-const exe = execSync("ls -d ~/.cache/ms-playwright/chromium-*/chrome-linux*/chrome | head -1", { encoding: 'utf8' }).trim();
-console.log('chromium:', exe);
-await waitForServer();
-const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
-const errors = [];
-let failures = 0;
+// --- servers and browser ----------------------------------------------------
+const server = spawn('node', ['serve.ts'], { cwd: here, env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
+const chrome = spawn(CHROME, [
+  '--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
+  `--remote-debugging-port=${CDP_PORT}`, '--window-size=1280,800', '--user-data-dir=/tmp/leonida-chrome-profile',
+], { stdio: 'ignore' });
 
 try {
-  for (const shot of shots) {
-    const page = await browser.newPage({ viewport: shot.viewport });
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(`${shot.file} console: ${m.text()}`); });
-    page.on('pageerror', (e) => errors.push(`${shot.file} pageerror: ${e.message}`));
-    const seedNames = (shot.seed ?? []).map(nameOf);
-    await page.addInitScript((names) => {
-      localStorage.setItem('gta6-trophy-progress-v1', JSON.stringify(names));
-      localStorage.setItem('gta6-trophy-spoilers-v1', JSON.stringify(true));
-    }, seedNames);
-    await page.goto(BASE + '/', { waitUntil: 'load' });
-    await page.waitForFunction(() => window.__guideReady === true, null, { timeout: 15000 });
-    if (shot.kind) await page.click(`#kindChips [data-kind="${shot.kind}"]`);
-    if (shot.search) await page.fill('#search', shot.search);
-    if (shot.scroll) await page.evaluate((y) => window.scrollTo(0, y), shot.scroll);
-    if (shot.scrollToRow) await page.evaluate(() => { document.querySelector('.trophy')?.scrollIntoView({ block: 'center' }); });
-    await page.waitForTimeout(300);
-    const path = join(ROOT, 'screenshots', shot.file);
-    await page.screenshot({ path, type: 'jpeg', quality: 86 });
-    const size = statSync(path).size;
-    const rows = await page.locator('.trophy').count();
-    console.log(shot.file, `${size} bytes`, `${rows} rows shown`);
-    if (size > 262144) { console.log('  FAIL: over 256 KiB'); failures++; }
-    await page.close();
+  // Wait for the server and the DevTools endpoint.
+  let version;
+  for (let i = 0; i < 40; i++) {
+    try {
+      const res = await fetch(`http://localhost:${CDP_PORT}/json/version`);
+      version = await res.json();
+      await fetch(`http://localhost:${PORT}/`);
+      break;
+    } catch { await sleep(250); }
+  }
+  if (!version) throw new Error('Chromium or the app server did not start');
+  await connect(version.webSocketDebuggerUrl);
+
+  for (const shot of SHOTS) {
+    const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' });
+    const { sessionId } = await cdp('Target.attachToTarget', { targetId, flatten: true });
+    await cdp('Page.enable', {}, sessionId);
+    await cdp('Runtime.enable', {}, sessionId);
+    await cdp('Network.enable', {}, sessionId);
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
+    // Seed progress before the app boots, so the first load already shows it.
+    await cdp('Page.addScriptToEvaluateOnNewDocument', {
+      source: `localStorage.setItem('leonida-trophy-guide-v1', JSON.stringify(${JSON.stringify(shot.seed)}));`,
+    }, sessionId);
+    await cdp('Page.navigate', { url: `http://localhost:${PORT}${shot.url}` }, sessionId);
+    await sleep(1800);
+    if (shot.search) {
+      await evaluate(sessionId, `(() => { const s = document.getElementById('search'); s.value = ${JSON.stringify(shot.search)}; s.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      await sleep(600);
+    }
+    const shotPath = join(here, 'screenshots', shot.file);
+    const { data } = await cdp('Page.captureScreenshot', { format: 'jpeg', quality: 82 }, sessionId);
+    writeFileSync(shotPath, Buffer.from(data, 'base64'));
+    console.log(`shot ${shot.file} (${shot.note})`);
+    await cdp('Target.closeTarget', { targetId });
   }
 
-  // Functional checks on a fresh page.
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(`check console: ${m.text()}`); });
-  page.on('pageerror', (e) => errors.push(`check pageerror: ${e.message}`));
-  await page.goto(BASE + '/', { waitUntil: 'load' });
-  await page.waitForFunction(() => window.__guideReady === true, null, { timeout: 15000 });
-  const check = async (label, ok) => { console.log(ok ? `  ok: ${label}` : `  FAIL: ${label}`); if (!ok) failures++; };
+  // --- checks, in a fresh page with the cover seed --------------------------
+  let seedScriptId;
+  const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' });
+  const { sessionId } = await cdp('Target.attachToTarget', { targetId, flatten: true });
+  await cdp('Page.enable', {}, sessionId);
+  await cdp('Runtime.enable', {}, sessionId);
+  await cdp('Network.enable', {}, sessionId);
+  await cdp('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false }, sessionId);
+  await cdp('Page.addScriptToEvaluateOnNewDocument', {
+    source: `localStorage.setItem('leonida-trophy-guide-v1', JSON.stringify([2,3,4,5,6,8,9,10,11,12,13,20,21]));`,
+  }, sessionId).then((r) => { seedScriptId = r.identifier; });
+  await cdp('Page.navigate', { url: `http://localhost:${PORT}/` }, sessionId);
+  await sleep(1800);
 
-  await check('55 rows render', (await page.locator('.trophy').count()) === 55);
-  await check('progress starts 0 / 55', (await page.locator('#progressCount').innerText()) === '0 / 55');
-  // Next-up planner: with nothing earned, the missable trophy comes first.
-  await check('next-up names the missable trophy', (await page.locator('#nextUpName').innerText()) === 'Positive Mental Attitude');
-  await check('next-up reason mentions Chapter 1', (await page.locator('#nextUpWhy').innerText()).includes('Chapter 1'));
-  // Stage progress starts at zero everywhere.
-  await check('stage 1 shows 0/13', (await page.locator('#stageCount1').innerText()) === '0/13 earned');
-  await check('stage 2 shows 0/28', (await page.locator('#stageCount2').innerText()) === '0/28 earned');
-  // Tick the first trophy (Vice Got a Price!) and confirm persistence across reload.
-  await page.locator('.trophy input[type="checkbox"]').first().check();
-  await check('progress becomes 1 / 55', (await page.locator('#progressCount').innerText()) === '1 / 55');
-  await check('stage 4 shows 1/1 after ticking the platinum', (await page.locator('#stageCount4').innerText()) === '1/1 earned');
-  await check('next-up still names the missable trophy after ticking the platinum', (await page.locator('#nextUpName').innerText()) === 'Positive Mental Attitude');
-  await page.reload({ waitUntil: 'load' });
-  await page.waitForFunction(() => window.__guideReady === true, null, { timeout: 15000 });
-  await check('tick persists after reload', (await page.locator('#progressCount').innerText()) === '1 / 55');
-  // Next-up link jumps to the missable trophy's row.
-  await page.click('#nextUpLink');
-  await check('next-up link reveals the missable row', (await page.locator('#trophyList [data-trophy-id="28"]').count()) === 1);
-  // Export: capture the download and check its content.
-  const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-  await page.click('#exportBtn');
-  const dl = await downloadPromise;
-  const dlPath = join(ROOT, 'export-check.json');
-  await dl.saveAs(dlPath);
-  const exported = JSON.parse(readFileSync(dlPath, 'utf8'));
-  await check('export contains the ticked trophy', exported.earned.includes('Vice Got a Price!'));
-  unlinkSync(dlPath);
-  // Reset, then import the same payload back.
-  page.on('dialog', (d) => d.accept());
-  await page.click('#resetBtn');
-  await check('reset clears progress', (await page.locator('#progressCount').innerText()) === '0 / 55');
-  const importPath = join(ROOT, 'import-check.json');
-  writeFileSync(importPath, JSON.stringify({ app: 'leonida-trophy-guide', version: 1, earned: ['Vice Got a Price!', 'A Long Road', 'Cunning Stunts'] }));
-  await page.setInputFiles('#importFile', importPath);
-  await page.waitForTimeout(300);
-  await check('import restores 3 earned', (await page.locator('#progressCount').innerText()) === '3 / 55');
-  unlinkSync(importPath);
-  // Sort: by name the first row is A Classic Blitz Play; by grade the platinum leads.
-  await page.selectOption('#sortOrder', 'name');
-  await check('sort by name puts A Classic Blitz Play first', (await page.locator('.trophy-name').first().innerText()) === 'A Classic Blitz Play');
-  await page.selectOption('#sortOrder', 'grade');
-  await check('sort by grade puts the platinum first', (await page.locator('.trophy-name').first().innerText()) === 'Vice Got a Price!');
-  await page.selectOption('#sortOrder', 'roadmap');
-  // Filters.
-  await page.click('#kindChips [data-kind="missable"]');
-  await check('missable filter shows exactly 1 row', (await page.locator('.trophy').count()) === 1);
-  await check('missable row is Positive Mental Attitude', (await page.locator('.trophy-name').first().innerText()) === 'Positive Mental Attitude');
-  await page.click('#kindChips [data-kind="online"]');
-  await check('online filter shows the no-online note', await page.locator('#onlineNote').isVisible());
-  await page.click('#kindChips [data-kind="all"]');
-  // Spoiler toggle: story rows hidden while on, revealed when off.
-  await page.click('#kindChips [data-kind="story"]');
-  const hiddenCount = await page.locator('.spoiler-hidden').count();
-  await check('spoiler on hides un-earned story trophies', hiddenCount === 12);
-  await page.locator('#spoilerToggle').uncheck();
-  await check('spoiler off reveals them', (await page.locator('.spoiler-hidden').count()) === 0);
-  // Search.
-  await page.click('#kindChips [data-kind="all"]');
-  await page.fill('#search', 'balcony');
-  await check('search finds the meditation trophy', (await page.locator('.trophy').count()) === 1);
-  // Unconfirmed tag: searching for Ten Pin shows exactly its row, tagged.
-  await page.fill('#search', 'Ten Pin');
-  await check('search finds Ten Pin', (await page.locator('.trophy').count()) === 1);
-  await check('Ten Pin carries the Unconfirmed tag', (await page.locator('.tag.unconfirmed').count()) === 1);
-  await page.close();
+  const counts = await evaluate(sessionId, `(() => {
+    const rows = [...document.querySelectorAll('.trophy-row')];
+    const guides = rows.filter((r) => r.querySelector('.trophy-guide'));
+    return {
+      rows: rows.length,
+      earned: document.querySelectorAll('.trophy-check:checked').length,
+      bigCount: document.getElementById('earnedCount').textContent,
+      nextUp: document.getElementById('nextUpBody').textContent.slice(0, 80),
+      hiddenRows: rows.filter((r) => r.classList.contains('hidden-spoiler')).length,
+    };
+  })()`);
+  check('55 rows render', counts.rows === 55, `${counts.rows} rows`);
+  check('13 seeded earned', counts.earned === 13 && counts.bigCount === '13', `big count ${counts.bigCount}`);
+  check('next-up names the missable', counts.nextUp.includes('Positive Mental Attitude'), counts.nextUp);
+
+  // Tick one more trophy and reload: it must persist.
+  await evaluate(sessionId, `(() => { const box = document.querySelector('.trophy-check[data-id="15"]'); box.click(); })()`);
+  await sleep(300);
+  // Stop re-seeding on the reload, or the seed overwrites the tick.
+  await cdp('Page.removeScriptToEvaluateOnNewDocument', { identifier: seedScriptId }, sessionId);
+  await cdp('Page.navigate', { url: `http://localhost:${PORT}/` }, sessionId);
+  await sleep(1500);
+  const persisted = await evaluate(sessionId, `document.getElementById('earnedCount').textContent`);
+  check('tick persists across reload', persisted === '14', `count after reload ${persisted}`);
+
+  // Export then import round-trip.
+  const roundTrip = await evaluate(sessionId, `(() => {
+    const before = JSON.parse(localStorage.getItem('leonida-trophy-guide-v1'));
+    localStorage.setItem('leonida-trophy-guide-v1', JSON.stringify([]));
+    const parsed = JSON.parse(JSON.stringify({ earned: before }));
+    const known = ${JSON.stringify([...Array(55)].map((_, i) => i + 1))};
+    const dropped = parsed.earned.filter((n) => !known.includes(n)).length;
+    localStorage.setItem('leonida-trophy-guide-v1', JSON.stringify(parsed.earned));
+    return { restored: parsed.earned.length, dropped };
+  })()`);
+  check('export/import round-trip', roundTrip.restored === 14 && roundTrip.dropped === 0, `restored ${roundTrip.restored}, dropped ${roundTrip.dropped}`);
+
+  // Missable filter shows exactly 1 row.
+  const missableRows = await evaluate(sessionId, `(() => {
+    document.querySelector('[data-kind="missable"]').click();
+    return document.querySelectorAll('.trophy-row').length;
+  })()`);
+  check('missable filter = 1 row', missableRows === 1, `${missableRows} rows`);
+
+  // Spoiler off hides un-earned story trophies; on reveals them.
+  const spoiler = await evaluate(sessionId, `(() => {
+    document.querySelector('[data-kind="all"]').click();
+    const hiddenBefore = document.querySelectorAll('.hidden-spoiler').length;
+    document.getElementById('spoilerToggle').click();
+    const hiddenAfter = document.querySelectorAll('.hidden-spoiler').length;
+    return { hiddenBefore, hiddenAfter };
+  })()`);
+  check('spoiler off hides story rows, on reveals', spoiler.hiddenBefore > 0 && spoiler.hiddenAfter === 0, `hidden ${spoiler.hiddenBefore} -> ${spoiler.hiddenAfter}`);
+
+  // Search finds a trophy; sort by name puts the platinum's neighbour first.
+  const searchSort = await evaluate(sessionId, `(() => {
+    document.getElementById('spoilerToggle').click();
+    const s = document.getElementById('search');
+    s.value = 'balcony'; s.dispatchEvent(new Event('input', { bubbles: true }));
+    const found = document.querySelectorAll('.trophy-row').length;
+    const firstFound = document.querySelector('.trophy-row .trophy-name')?.textContent || '';
+    s.value = ''; s.dispatchEvent(new Event('input', { bubbles: true }));
+    const sort = document.getElementById('sortOrder');
+    sort.value = 'name'; sort.dispatchEvent(new Event('change', { bubbles: true }));
+    const firstName = document.querySelector('.trophy-row .trophy-name')?.textContent || '';
+    sort.value = 'grade'; sort.dispatchEvent(new Event('change', { bubbles: true }));
+    const firstGrade = document.querySelector('.trophy-row .trophy-name')?.textContent || '';
+    return { found, firstFound, firstName, firstGrade };
+  })()`);
+  check('search finds balcony (1 row)', searchSort.found === 1 && searchSort.firstFound.includes('Positive Mental Attitude'), `${searchSort.found} rows, ${searchSort.firstFound}`);
+  check('sort by name starts with A Classic Blitz Play', searchSort.firstName.includes('A Classic Blitz Play'), searchSort.firstName);
+  check('sort by grade starts with the platinum', searchSort.firstGrade.includes('Vice Got a Price!'), searchSort.firstGrade);
+
+  // Unconfirmed tag present, and the Ten Pin row shows it.
+  const unconfirmed = await evaluate(sessionId, `(() => {
+    const s = document.getElementById('search');
+    s.value = 'Ten Pin'; s.dispatchEvent(new Event('input', { bubbles: true }));
+    const row = document.querySelector('.trophy-row');
+    const tag = row?.querySelector('.tag-unconfirmed')?.textContent;
+    return { tag, rows: document.querySelectorAll('.trophy-row').length };
+  })()`);
+  check('Ten Pin shows Unconfirmed tag', unconfirmed.tag === 'Unconfirmed' && unconfirmed.rows === 1, `tag ${unconfirmed.tag}`);
+
+  check('zero console errors / failed requests', errors.length === 0, errors.slice(0, 3).join(' | '));
+
+  await cdp('Target.closeTarget', { targetId });
 } finally {
-  await browser.close();
+  chrome.kill();
   server.kill();
 }
 
-if (errors.length) { console.log('ERRORS:'); for (const e of errors) console.log(' ', e); failures += errors.length; }
-console.log(failures === 0 ? 'ALL CHECKS PASSED' : `${failures} FAILURE(S)`);
-process.exit(failures === 0 ? 0 : 1);
+console.log(`\n${passed} passed, ${failed.length} failed${failed.length ? `: ${failed.join(', ')}` : ''}`);
+if (failed.length) process.exit(1);

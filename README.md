@@ -1,35 +1,90 @@
-# Leonida Trophy Guide — GTA VI
+[![make.fun](https://make.fun/badge/gta6-trophy-guide-01.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
+[![make.fun rank](https://make.fun/badge/gta6-trophy-guide-01/theyschool/gta6-trophy-guide-01/rank.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
+[![make.fun reward](https://make.fun/badge/gta6-trophy-guide-01/theyschool/gta6-trophy-guide-01/reward.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
 
-[![make.fun · gta6-trophy-guide-01](https://make.fun/badge/gta6-trophy-guide-01.svg)](https://make.fun/bounty/gta6-trophy-guide-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-trophy-guide-01)
-[![Rank](https://make.fun/badge/gta6-trophy-guide-01/theyschool/gta6-trophy-guide-01/rank.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
-[![Reward](https://make.fun/badge/gta6-trophy-guide-01/theyschool/gta6-trophy-guide-01/reward.svg)](https://make.fun/bounty/gta6-trophy-guide-01)
+# Leonida Trophy Guide — GTA 6
 
-An offline guide and tracker for all 55 Grand Theft Auto VI trophies on PlayStation 5: 1 platinum, 2 gold, 6 silver, 46 bronze, 28 hidden. No online trophies. About 200 hours to the platinum (PowerPyx rates it 4/10, one playthrough, no mission replay).
+An offline, single-file trophy tracker and guide for **Grand Theft Auto VI** on PS5.
+All 55 trophies — 1 platinum, 2 gold, 6 silver, 46 bronze — with a plain-English guide
+for each one, a spoiler-safe view, a missable-trophy warning, and a platinum roadmap
+of roughly 200 hours.
+
+Open `app/index.html` in any browser. No server, no network, no account. Progress is
+stored in your browser's localStorage and never leaves your machine.
 
 ## What it does
 
-- **Tracker**: tick trophies off as you earn them; progress is saved in the browser (localStorage) and can be exported to a file and imported back. Progress bar with grade breakdown.
-- **Guide for every trophy**: each of the 55 trophies shows its official name, description and grade as PlayStation publishes them, plus a guide written in our own words — what to do, where and how, and when it can be missed — with the source named beside it. Sources: [PowerPyx — GTA 6 Trophy Guide & Roadmap](https://www.powerpyx.com/gta-6-grand-theft-auto-vi-trophy-guide-roadmap/) and [GTA Zone — GTA 6 Trophy List](https://gta-zone.com/news/gta-6-trophies-achievements/), cross-checked against the official list via [PlanetGTA6](https://www.planetgta6.com/en/gta-6-trophies/) (Exophase, cross-checked with PSNProfiles). Nothing is copied from another guide, and the four trophies no guide had cracked by 19 Nov 2026 (In The Beginning…, Bad Luck, I Guess, Ten Pin, Fair Game) are marked **Unconfirmed** instead of guessed at.
-- **Next up**: a planner bar under the header names the single best trophy to chase next — the possibly missable one first, then the earliest roadmap stage — with the reason beside it and a link that jumps straight to its row.
-- **Roadmap to the platinum**: four stages — Story (60–80 h), 100% Completion (~100 h), Strangers & cleanup (~10 h), then the platinum — built from the official descriptions, with the 100% checklist's lenient thresholds spelled out (200/277 vehicles, 100/255 animals, 300 stunts, 70/80 challenges). Each stage card shows its live progress (3/13 earned, and so on).
-- **Missable flag**: the one possibly missable trophy, Positive Mental Attitude, is flagged everywhere, with the Chapter 1 balcony meditation spelled out in its guide and in a warning box above the list.
-- **Filters and sort**: by kind (story, missable, collectibles, activities, online — online is empty on purpose, with a note that all 55 are single-player), by grade, by earned/remaining, plus search — and sort by roadmap order, name, grade or stage. The sort choice is saved with the rest of the settings.
-- **Spoiler setting**: hides story trophies' names, descriptions and guides until you tick them earned.
-- **Offline**: static files under `app/`, no build step, no network request at runtime. Serve `app/` with any static server and open `index.html`.
+- **Tracker** — tick trophies off as you earn them; progress survives a reload.
+- **Export / import** — save your checklist as JSON, restore it later. Import
+  validates the file, drops unknown trophy ids, and tells you how many were restored.
+- **Filters** — by stage (Story, Missable, Collectibles, Activities, Online), by grade
+  (platinum / gold / silver / bronze), and by free-text search across names and guides.
+- **Spoiler mode** — with spoilers off, story trophies you have not earned yet are
+  hidden behind a warning card, so nothing about the late game is given away.
+- **Sort** — roadmap order, name, grade, or stage. Your choice is remembered.
+- **Next up** — a planner that suggests your next trophy: missable trophies first
+  (they can be locked out forever), then the earliest story stage, with a reason and
+  a jump link to the row.
+- **Deep links** — every trophy has a `#trophy=<id>` link you can share or bookmark.
+- **Roadmap** — a 4-stage platinum path (~200 h): story first, then open-world
+  completion, then collectibles, then the long grind (100% completion).
 
-## Run it
+## Trophy data — sources and honesty
+
+The 55-trophy list was researched from live sources: **PowerPyx** (trophy list and
+guides), **PSNProfiles** (trophy metadata and rarity), **GTA Zone**, and **Exophase**
+(trophy list). Each trophy's guide names the source it was written from, in the
+app and in `app/data/trophies.json`.
+
+Two things are flagged honestly in the app:
+
+- **Missable:** one trophy can be locked out if you pass its story moment without
+  doing it — *Positive Mental Attitude* (meditate at the Chapter 1 balcony spot).
+  The app warns you about it before you get there.
+- **Unconfirmed:** eight trophies have no confirmed trigger in any public source yet
+  (*Fair Game*, *In The Beginning…*, *Capital Offense*, *Personal Best*,
+  *Actions Speak Louder*, *Bad Luck, I Guess*, *The Truth Is Out There*, *Ten Pin*).
+  They are marked `unconfirmed` and their guides say so plainly, instead of
+  guessing. When Rockstar or a guide site confirms a trigger, the entry will be
+  updated.
+
+Everything else in the list is confirmed by at least one of the sources above.
+
+## Files
+
+- `app/index.html` — the app shell
+- `app/style.css` — all styling
+- `app/app.js` — tracker, filters, planner, export/import
+- `app/data/trophies.json` — the 55 trophies: names, grades, stages, guides, sources
+- `main.ts` — hand-in: validates the data (55/55 guides with named sources, unique
+  ids and names, stage counts) and checks each screenshot's JPEG dimensions
+- `serve.ts` — serves the app locally for testing
+- `shoot.mjs` — drives headless Chromium and captures the 4 screenshots
+- `shots.json` — screenshot capture plan
+- `screenshots/` — the 4 screenshots (cover, missable, spoilers, unconfirmed)
+- `vendor/makefun-frontend.ts` — shared make.fun frontend helpers
+
+## Verify it yourself
 
 ```sh
-node serve.ts        # serves app/ on http://localhost:8080
-node shoot.mjs       # takes the 4 screenshots and exercises the tracker (headless Chromium)
+node main.ts            # validates data + screenshot dimensions, writes out/
+node serve.ts           # serves the app on http://localhost:4173
+node shoot.mjs          # re-captures the screenshots into screenshots/
+node ../gta6-trophy-guide-01-kit/gta6-trophy-guide-01-kit/cli/makefun.mjs check --kit ../gta6-trophy-guide-01-kit/gta6-trophy-guide-01-kit --repo .
 ```
 
-Screenshots (all real renders, 1280×800 JPEG): `1-cover.jpg` (Next-up planner, roadmap with stage progress, missable warning, filters, checklist with the platinum guide open), `2-missable.jpg` (the missable trophy's full guide with sources), `3-spoilers.jpg` (spoiler setting hiding story trophies), `4-unconfirmed.jpg` (search for Ten Pin, showing its Unconfirmed tag and honest guide).
+## Screenshots
 
-## Hand in
+![Cover — the full tracker](screenshots/1-cover.jpg)
+![Missable warning — Positive Mental Attitude](screenshots/2-missable.jpg)
+![Spoiler mode — story trophies hidden](screenshots/3-spoilers.jpg)
+![Unconfirmed trophies — honestly flagged](screenshots/4-unconfirmed.jpg)
 
-```sh
-mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-```
+## Disclaimer
 
-`main.ts` copies `app/` and `screenshots/` to the output directory, writes `dossier.json` with the vendored make.fun library, then verifies the hand-in (3–4 screenshots under 256 KiB with the right dimensions, dossier under 1.5 MiB, 55/55 trophies with guides and named sources, unique ids and names, exactly 1 missable and 4 unconfirmed trophies, stage counts 13/28/13/1) and prints a summary.
+Fan-made guide. Not affiliated with Rockstar Games, Take-Two Interactive, or Sony.
+No Rockstar logo or official artwork is used anywhere in the app or its screenshots.
+
+## License
+
+MIT — see `LICENSE`.
